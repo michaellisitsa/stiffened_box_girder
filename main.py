@@ -56,8 +56,19 @@ def main():
     st.header("Results Summary")
     results_container = st.beta_container()
 
-    # Input results
-    #TODO
-    
+    # Choice of standards
+    st.sidebar.radio("Edition of AS5100.6",("2004","2017"))
+
+    #Geometry of box girder
+    L = st.sidebar.number_input('Length of Box Girder (m)',5.0,100.0,50.0,step=1.0,format='%f')
+
+    #Box dimension inputs
+    b = st.sidebar.slider('Width of Box Girder (mm)',500,3000,1000,step=50,format='%i') / 1000
+    d = st.sidebar.slider('Height of Box Girder (mm)',500,3000,1000,step=50,format='%i') / 1000
+    t_w = st.sidebar.slider('Thickness of Webs (mm)',5,30,12,step=1,format='%i') / 1000
+    t_f = st.sidebar.slider('Thickness of Flanges (mm)',5,30,12,step=1,format='%i') / 1000
+
+    #Stiffener dimensions
+
 if __name__ == '__main__':
     main()

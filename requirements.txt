@@ -5,3 +5,4 @@ matplotlib
 forallpeople
 streamlit_drawable_canvas
 pillow
+sectionproperties
