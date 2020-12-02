@@ -1,0 +1,7 @@
+handcalcs
+numpy
+pandas
+matplotlib
+forallpeople
+streamlit_drawable_canvas
+pillow
