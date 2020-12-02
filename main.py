@@ -57,18 +57,30 @@ def main():
     results_container = st.beta_container()
 
     # Choice of standards
-    st.sidebar.radio("Edition of AS5100.6",("2004","2017"))
+    st.sidebar.markdown("## Input Design Requirements")
+    version = st.sidebar.radio("Edition of AS5100.6",("2004","2017"))
+    panel_pos = st.sidebar.radio("Panel being analysed",("outer","inner"))
 
     #Geometry of box girder
+    st.sidebar.markdown("## Input Structure Geometry")
     L = st.sidebar.number_input('Length of Box Girder (m)',5.0,100.0,50.0,step=1.0,format='%f')
 
     #Box dimension inputs
+    st.sidebar.markdown("## Input box dimensions")
     b = st.sidebar.slider('Width of Box Girder (mm)',500,3000,1000,step=50,format='%i') / 1000
     d = st.sidebar.slider('Height of Box Girder (mm)',500,3000,1000,step=50,format='%i') / 1000
     t_w = st.sidebar.slider('Thickness of Webs (mm)',5,30,12,step=1,format='%i') / 1000
     t_f = st.sidebar.slider('Thickness of Flanges (mm)',5,30,12,step=1,format='%i') / 1000
 
     #Stiffener dimensions
+    st.sidebar.markdown("## Input Stiffener dimensions")
+    n_stif = st.sidebar.radio("Number of stiffeners",(2,3))
+    d_stif = st.sidebar.slider('Depth/Height longit. stiffeners(mm)',50,300,100,step=5,format='%i') / 1000
+    t_stif = st.sidebar.slider('Thickness longit. stiffeners (mm)',5,30,12,step=1,format='%i') / 1000
+    d_stif_trans = st.sidebar.slider('Depth/Height tranv. stiffeners / diaphragm (mm)',50,300,100,step=5,format='%i') / 1000
+    t_stif_trans = st.sidebar.slider('Thickness of transv. stiffeners / diaphragm(mm)',5,30,12,step=1,format='%i') / 1000
+    s_stif_trans = st.sidebar.slider('Spacing of transverse stiffeners (mm)',300,3000,1000,step=50,format='%i') / 1000
 
+    st.write(f"n_stif = {n_stif}")
 if __name__ == '__main__':
     main()
