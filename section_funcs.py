@@ -1,5 +1,7 @@
 
 
+import matplotlib.pyplot as plt
+
 def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
     """
     This function allows for generation of a stiffened box section
@@ -89,7 +91,9 @@ def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
 
     geometry.clean_geometry(verbose=False) # clean the geometry
     geometry.add_hole([b/2, d/2])
-    geometry.plot_geometry()  # plot the geometry
+    fig,ax = plt.subplots()
+    ax.set_aspect('equal')
+    geometry.plot_geometry(ax=ax)  # plot the geometry
 
     # create a mesh - use a mesh size of 12 for the RHS, 6 for stiffeners
     rhs_mesh=d/15
@@ -108,4 +112,4 @@ def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
 
     section = CrossSection(geometry, mesh) # create a CrossSection object
     
-    return section
+    return section, fig, ax

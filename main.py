@@ -4,6 +4,7 @@ import streamlit as st
 #Import associated py files with functions
 import functions as fnc
 import validation as vld
+import section_funcs
 import plots
 
 #Import data and plotting
@@ -20,36 +21,38 @@ from handcalcs import handcalc
 def main():
     """This function is run at the beginning of each script"""
     st.title("Box Girder Design - Stiffener calculations")
-    st.markdown("""
-    The below worksheet shows the calculations that are required for the longitudinal and transverse stiffeners as per 
+    
+    with st.beta_expander("Table of contents:"):
+        st.markdown("""
+        The below worksheet shows the calculations that are required for the longitudinal and transverse stiffeners as per 
 
-    Sec 7.3 - AS5100.6-2017
-    or
-    Sec 7.3 - AS5100.6-2004
+        Sec 7.3 - AS5100.6-2017
+        or
+        Sec 7.3 - AS5100.6-2004
 
-    # TABLE OF CONTENTS:
+        # TABLE OF CONTENTS:
 
-    **Section 7.3** - *Longitudinal Flange Stiffeners*
-    - **7.3.3.1** - Yielding of flange plate
-    - **7.3.3.2** - Effective Section of Flange Plate Stiffener
-    - **7.3.3.3** - Strength of Longitudinal Flange Stiffeners
+        **Section 7.3** - *Longitudinal Flange Stiffeners*
+        - **7.3.3.1** - Yielding of flange plate
+        - **7.3.3.2** - Effective Section of Flange Plate Stiffener
+        - **7.3.3.3** - Strength of Longitudinal Flange Stiffeners
 
 
-    **Section 7.4** - *Web in Beams with Longitudinal Stiffeners*
-    - **7.4.2** - Yielding of Web Panels
-    - **7.4.3** - Buckling of Web Panels
-    - **7.4.4** - Longitudinal Web Stiffeners
-    - **7.4.6** - Transverse Stiffeners of Longitudinally Stiffened Webs
-        - **5.10** - Stiffened Web alpha_v calculation
-        - **5.14** - Design of Intermediate Transverse Web Stiffeners
-        
-        
-    **Section 7.5** - *Transverse Members in Stiffened Flanges*
-    - **7.5.2** - Effective Section and Stiffness for Transverse Members
-    - **7.5.3** - Stiffness of Transverse Members
+        **Section 7.4** - *Web in Beams with Longitudinal Stiffeners*
+        - **7.4.2** - Yielding of Web Panels
+        - **7.4.3** - Buckling of Web Panels
+        - **7.4.4** - Longitudinal Web Stiffeners
+        - **7.4.6** - Transverse Stiffeners of Longitudinally Stiffened Webs
+            - **5.10** - Stiffened Web alpha_v calculation
+            - **5.14** - Design of Intermediate Transverse Web Stiffeners
+            
+            
+        **Section 7.5** - *Transverse Members in Stiffened Flanges*
+        - **7.5.2** - Effective Section and Stiffness for Transverse Members
+        - **7.5.3** - Stiffness of Transverse Members
 
-    **BS5400 - Sec 9 used for supplementary information**
-    """)
+        **BS5400 - Sec 9 used for supplementary information**
+        """)
 
     #Create Menu for various options
     vld.input_description("Click here to add custom description, sketch or image")
@@ -85,7 +88,7 @@ def main():
 
     #Calculate stiffener dimensions
     longit_stif_spacing_latex, longit_stif_spacing_vals = fnc.longit_stif_spacing(b, d, n_stif)
-    st.latex(longit_stif_spacing_latex)
+    st.sidebar.latex(longit_stif_spacing_latex)
     b_flange,b_web = longit_stif_spacing_vals
 
     #Input Materials
@@ -110,6 +113,66 @@ def main():
     My = st.sidebar.number_input("My Transverse BM (kNm)",0,20000,1000,10,"%i")
     Mz = st.sidebar.number_input("Mz Vertical BM (kNm)",0,20000,1000,10,"%i") * 1000
     rho = st.sidebar.slider("Proportion of longitudinal stress assumed to be redistributed from web to flange (%)",0,100,0,5,"%i") / 100
+
+    #Precamber
+    camb1 = st.sidebar.slider("Assumed pre-camber for imperfection calculations:",0,1000,100,10,"%i") / 1000
+    x1 = L/2
+
+    with st.beta_expander("Box Girder Section Properties Check"):
+        st.markdown("""
+        Below section calculates the following box girder properties:
+
+        - Section Properties
+            - *area* Area
+            - *cx, cy* Centroids
+            - *ixx_c, iyy_c* Second Mom Area
+            - *J* Torsion Constant
+        - Stress Outputs - Max
+            - *f_star_s_comp* Max Compression due to Biaxial BM
+            - *f_star_s_tens* Max Tension ...
+        - The maximum stress in the for the critical stiffeners is:
+            - *f_star_s_fl* Max compression at Effective flange stiffener section due to Biaxial BM
+            - *f_star_s_web* Max compression at Effective web stiffener ...
+            - *f_star_s_fl_mid* Max compression at mid-panel of flange due to Triaxial BM
+            - *f_star_s_web_mid* Max compression at mid-panel of web ...
+
+        The below calculations are using the ***SectionProperties*** library in Python to calculate the stiffener critical stresses to be used.
+
+        A separate Python file is used for the box girder geometry generator.
+        """)
+
+    st.set_option('deprecation.showPyplotGlobalUse', True)
+    section, fig1, ax1 = section_funcs.boxgenerator(b,
+                                     d,
+                                     t_w,
+                                     t_f,
+                                     d_stif,
+                                     t_stif,
+                                     n_stif)
+    section.calculate_geometric_properties(time_info=False)
+    #section.calculate_warping_properties(time_info=False)
+
+    area = section.get_area()
+    (cx, cy) = section.get_c()
+    (ixx_c, iyy_c, ixy_c) = section.get_ic()
+
+    stress_locations_latex, stress_locations_vals = fnc.stress_locations(b * u.m,d * u.m,t_f * u.m,t_w * u.m,n_stif)
+    #st.latex(stress_locations_latex)
+    x_f_stif,y_f_stif,x_w_stif,y_w_stif,x_f_mid,y_w_mid = stress_locations_vals
+
+    ax1.plot(x_f_stif.value,y_f_stif.value,'ro')
+    ax1.annotate(f"Crit Flange Stiffener",(x_f_stif.value,y_f_stif.value),(x_f_stif.value+0.3,y_f_stif.value+0.3),arrowprops={'arrowstyle':'->'})
+    ax1.plot(x_w_stif.value,y_w_stif.value,'ro')
+    ax1.annotate(f"Crit Web Stiffener",(x_w_stif.value,y_w_stif.value),(x_w_stif.value-1.0,y_w_stif.value+0.3),arrowprops={'arrowstyle':'->'})
+    ax1.plot(x_f_mid.value,y_f_stif.value,'ro')
+    ax1.annotate(f"Crit flange panel",(x_f_mid.value,y_f_stif.value),(x_f_mid.value-0.4,y_f_stif.value+0.3),arrowprops={'arrowstyle':'->'})
+    st.pyplot(fig1) #Plot the cross section shape of the box girder
+
+    st.text(f'A: {area:.4f} m^2 \n\n'
+    f'Section centroids are:\ncx = {cx:.3f} m\n'
+    f'cy = {cy:.3f} m \n\n'
+    f'Second Moments of area are:\n'
+    f'ixx_c = {ixx_c:.4f} m^4 \niyy_c = {iyy_c:.4f} m^4')
 
 if __name__ == '__main__':
     main()
