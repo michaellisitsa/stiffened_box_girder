@@ -124,18 +124,23 @@ def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
     return section, fig, ax
 
 
-def in_plane_principle(section,Fy,Mx,My,Mz):
+def in_plane_principle(section,Fy,Fz,Mx,My,Mz):
     """
     Determine in plane stresses and output peak stresses
     """
     stress_post = section.calculate_stress(Vy = Fy,
+                                        Vx = Fz,
                                         Mxx = Mz,
                                         Myy = My,
                                         Mzz = Mx)
     col1, col2 = st.beta_columns(2)
-    stress_post.plot_stress_m_zz(pause=True)
+    col1.markdown("**Principle Stresses due to BM only**")
+    stress_post.plot_stress_m_zz()
+    # https://sectionproperties.readthedocs.io/en/latest/rst/api.html?highlight=m_zz#sectionproperties.analysis.cross_section.StressPost.plot_stress_m_zz
     col1.pyplot()
+    col2.markdown("**Shear Stresses due to $F_y$ and $F_z$**")
     stress_post.plot_stress_v_zxy()
+    # https://sectionproperties.readthedocs.io/en/latest/rst/api.html?highlight=v_zxy#sectionproperties.analysis.cross_section.StressPost.plot_vector_v_zxy
     col2.pyplot()
     stresses = stress_post.get_stress()
     f_star_s_comp = stresses[0]['sig_zz_m'].max() * u.N/u.m**2

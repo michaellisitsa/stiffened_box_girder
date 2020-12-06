@@ -178,7 +178,7 @@ def main():
     f'ixx_c = {ixx_c:.4f} m^4 \niyy_c = {iyy_c:.4f} m^4')
 
     # Get stresses on beam
-    f_star_s_comp, f_star_s_tens, stresses = section_funcs.in_plane_principle(section,Fy,Mx,My,Mz)
+    f_star_s_comp, f_star_s_tens, stresses = section_funcs.in_plane_principle(section,Fy,Fz,Mx,My,Mz)
 
 
     f_star_s_fl = section_funcs.stress_location(x_f_stif.value,
