@@ -211,7 +211,7 @@ def main():
                                     'max')
     f_star_s_fl_mean = section_funcs.stress_location(b/2,d,b/2,t_f, section.mesh_nodes, stresses[0]['sig_zz_m'],"mean")
     f_star_v = stresses[0]['sig_zy_vy'].max()
-    f_star_vt = stresses[0]['sig_zxy_mzz'].max() / 1e6
+    f_star_vt = stresses[0]['sig_zxy_mzz'].max()
 
     st.text(f'The maximum stress in for the critical stiffeners is:\n'
       f'f_star_s_fl = {f_star_s_fl/1e6:.0f} MPa\n'
@@ -222,7 +222,7 @@ def main():
       f'The average stress across the top flange is:\n'
       f'f_star_s_fl_mean = {f_star_s_fl_mean/1e6:.0f} MPa\n\n'
       f'The max torsion shear stress is:\n'
-      f'f_star_vt = {f_star_vt:.0f} MPa')
+      f'f_star_vt = {f_star_vt/1e6:.0f} MPa')
 
     flange_yield_latex, f_star_comb = fnc.flange_yield(f_star_vt * u.Pa,f_star_v * u.Pa,f_star_s_fl_mid * u.Pa)
     st.latex(flange_yield_latex)
