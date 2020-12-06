@@ -87,7 +87,7 @@ def main():
     a_panel = st.sidebar.slider('Spacing of transverse stiffeners (mm)',300,3000,1000,step=50,format='%i') / 1000
 
     #Calculate stiffener dimensions
-    longit_stif_spacing_latex, longit_stif_spacing_vals = fnc.longit_stif_spacing(b, d, n_stif)
+    longit_stif_spacing_latex, longit_stif_spacing_vals = fnc.longit_stif_spacing(b * u.m, d * u.m, n_stif)
     st.sidebar.latex(longit_stif_spacing_latex)
     b_flange,b_web = longit_stif_spacing_vals
 
@@ -210,6 +210,7 @@ def main():
                                     stresses[0]['sig_zz_m'],
                                     'max')
     f_star_s_fl_mean = section_funcs.stress_location(b/2,d,b/2,t_f, section.mesh_nodes, stresses[0]['sig_zz_m'],"mean")
+    f_star_v = stresses[0]['sig_zy_vy'].max()
     f_star_vt = stresses[0]['sig_zxy_mzz'].max() / 1e6
 
     st.text(f'The maximum stress in for the critical stiffeners is:\n'
@@ -222,6 +223,37 @@ def main():
       f'f_star_s_fl_mean = {f_star_s_fl_mean/1e6:.0f} MPa\n\n'
       f'The max torsion shear stress is:\n'
       f'f_star_vt = {f_star_vt:.0f} MPa')
-      
+
+    flange_yield_latex, f_star_comb = fnc.flange_yield(f_star_vt * u.Pa,f_star_v * u.Pa,f_star_s_fl_mid * u.Pa)
+    st.latex(flange_yield_latex)
+
+    if f_star_comb > phi*f_y * u.Pa:
+        st.error("FAIL {0} > {1} Util = {2:.2f}".format(f_star_comb,phi*f_y * u.Pa,f_star_comb/(phi*f_y * u.Pa)))
+    else:
+        st.success("PASS {0} < {1} Util = {2:.2f}".format(f_star_comb,phi*f_y * u.Pa,f_star_comb/(phi*f_y * u.Pa)))
+
+    with st.beta_expander("Effective section of flange stiffener"):
+        st.markdown("""
+        The slenderness of K_c value of the flange stiffeners are calculated in this section
+
+        - Stiffened flanges Section 7- Section 9.10.2 - BS5400.3-2000
+        - $K_c$ as per Fig 7.3.3.2 AS5100.6-2017 (Also BS5400 Fig 5)
+
+        Number of stiffeners:
+        - For **Stiffeners** >= 3, use greater of: 
+            - Curve 1
+            - Curve 3
+        - For **Stiffeners** =2, use greater of:
+            - Ave (Curve 1 + Curve 2)
+            - Curve 3
+
+        Slenderness:
+        - Curve 1 or 2:""")
+        st.latex(r"\lambda_{kb} = \frac{b}{t}\sqrt{\frac{f_y}{355}}")
+        st.markdown("- Curve 3:")
+        st.latex(r"\lambda_{ka} = \frac{a}{t}\sqrt{\frac{f_y}{355}}")
+
+    K_c, lamda_kc_a, lamda_kc_b, fig2, ax2 = fnc.K_buckling(n_stif,a_panel,b_flange.value,t_f,f_y)
+    st.pyplot(fig2)
 if __name__ == '__main__':
     main()
