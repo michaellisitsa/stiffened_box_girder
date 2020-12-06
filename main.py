@@ -109,8 +109,8 @@ def main():
     Fx = st.sidebar.number_input("F_x Axial Force typically due to thermal or restraint effects (kN)",0,1000,100,10,"%i") * 1000
     Fy = st.sidebar.number_input("F_y Vertical Shear Force (kN)",0,5000,100,10,"%i") * 1000
     Fz = st.sidebar.number_input("F_z Horizontal Shear Force (kN)",0,5000,100,10,"%i") * 1000
-    Mx = st.sidebar.number_input("Mx Torsion Force (kNm)",0,5000,100,10,"%i")
-    My = st.sidebar.number_input("My Transverse BM (kNm)",0,20000,1000,10,"%i")
+    Mx = st.sidebar.number_input("Mx Torsion Force (kNm)",0,5000,100,10,"%i") * 1000
+    My = st.sidebar.number_input("My Transverse BM (kNm)",0,20000,1000,10,"%i") * 1000
     Mz = st.sidebar.number_input("Mz Vertical BM (kNm)",0,20000,1000,10,"%i") * 1000
     rho = st.sidebar.slider("Proportion of longitudinal stress assumed to be redistributed from web to flange (%)",0,100,0,5,"%i") / 100
 
@@ -141,7 +141,7 @@ def main():
         A separate Python file is used for the box girder geometry generator.
         """)
 
-    st.set_option('deprecation.showPyplotGlobalUse', True)
+    st.set_option('deprecation.showPyplotGlobalUse', False)
     section, fig1, ax1 = section_funcs.boxgenerator(b,
                                      d,
                                      t_w,
@@ -150,29 +150,78 @@ def main():
                                      t_stif,
                                      n_stif)
     section.calculate_geometric_properties(time_info=False)
-    #section.calculate_warping_properties(time_info=False)
+    section.calculate_warping_properties(time_info=False)
 
     area = section.get_area()
     (cx, cy) = section.get_c()
     (ixx_c, iyy_c, ixy_c) = section.get_ic()
 
-    stress_locations_latex, stress_locations_vals = fnc.stress_locations(b * u.m,d * u.m,t_f * u.m,t_w * u.m,n_stif)
-    #st.latex(stress_locations_latex)
-    x_f_stif,y_f_stif,x_w_stif,y_w_stif,x_f_mid,y_w_mid = stress_locations_vals
+    x_f_stif,y_f_stif,x_w_stif,y_w_stif,x_f_mid,y_f_mid,x_w_mid,y_w_mid = fnc.stress_locations(b * u.m,d * u.m,t_f * u.m,t_w * u.m,n_stif)
 
+    #Plot stress points to consider
     ax1.plot(x_f_stif.value,y_f_stif.value,'ro')
     ax1.annotate(f"Crit Flange Stiffener",(x_f_stif.value,y_f_stif.value),(x_f_stif.value+0.3,y_f_stif.value+0.3),arrowprops={'arrowstyle':'->'})
     ax1.plot(x_w_stif.value,y_w_stif.value,'ro')
     ax1.annotate(f"Crit Web Stiffener",(x_w_stif.value,y_w_stif.value),(x_w_stif.value-1.0,y_w_stif.value+0.3),arrowprops={'arrowstyle':'->'})
-    ax1.plot(x_f_mid.value,y_f_stif.value,'ro')
-    ax1.annotate(f"Crit flange panel",(x_f_mid.value,y_f_stif.value),(x_f_mid.value-0.4,y_f_stif.value+0.3),arrowprops={'arrowstyle':'->'})
+    ax1.plot(x_f_mid.value,y_f_mid.value,'ro')
+    ax1.annotate(f"Crit flange panel",(x_f_mid.value,y_f_mid.value),(x_f_mid.value-0.4,y_f_mid.value+0.3),arrowprops={'arrowstyle':'->'})
+    ax1.plot(x_w_mid.value,y_w_mid.value,'ro')
+    ax1.annotate(f"Crit web panel",(x_w_mid.value,y_w_mid.value),(x_w_mid.value-0.4,y_w_mid.value+0.3),arrowprops={'arrowstyle':'->'})
+ 
     st.pyplot(fig1) #Plot the cross section shape of the box girder
 
+    #Output section properties for box girder
     st.text(f'A: {area:.4f} m^2 \n\n'
     f'Section centroids are:\ncx = {cx:.3f} m\n'
     f'cy = {cy:.3f} m \n\n'
     f'Second Moments of area are:\n'
     f'ixx_c = {ixx_c:.4f} m^4 \niyy_c = {iyy_c:.4f} m^4')
 
+    # Get stresses on beam
+    f_star_s_comp, f_star_s_tens, stresses = section_funcs.in_plane_principle(section,Fy,Mx,My,Mz)
+
+
+    f_star_s_fl = section_funcs.stress_location(x_f_stif.value,
+                              y_f_stif.value,
+                              0.05,
+                              0.05, 
+                              section.mesh_nodes, 
+                              stresses[0]['sig_zz_m'],
+                              'max')
+    f_star_s_web = section_funcs.stress_location(x_w_stif.value,
+                                y_w_stif.value,
+                                0.05,
+                                0.05,
+                                section.mesh_nodes,
+                                stresses[0]['sig_zz_m'],
+                                'max')
+    f_star_s_fl_mid = section_funcs.stress_location(x_f_mid.value,
+                                    y_f_mid.value,
+                                    0.05,
+                                    0.05, 
+                                    section.mesh_nodes, 
+                                    stresses[0]['sig_zz_m'],
+                                    'max')
+    f_star_s_web_mid = section_funcs.stress_location(x_w_mid.value,
+                                    y_w_mid.value,
+                                    0.05,
+                                    0.05,
+                                    section.mesh_nodes, 
+                                    stresses[0]['sig_zz_m'],
+                                    'max')
+    f_star_s_fl_mean = section_funcs.stress_location(b/2,d,b/2,t_f, section.mesh_nodes, stresses[0]['sig_zz_m'],"mean")
+    f_star_vt = stresses[0]['sig_zxy_mzz'].max() / 1e6
+
+    st.text(f'The maximum stress in for the critical stiffeners is:\n'
+      f'f_star_s_fl = {f_star_s_fl/1e6:.0f} MPa\n'
+      f'f_star_s_web = {f_star_s_web/1e6:.0f} MPa\n\n'
+      f'The maximum stress in the mid-panel sections is:\n'
+      f'f_star_s_fl_mid = {f_star_s_fl_mid/1e6:.0f} MPa\n'
+      f'f_star_s_web_mid = {f_star_s_web_mid/1e6:.0f} MPa\n\n'
+      f'The average stress across the top flange is:\n'
+      f'f_star_s_fl_mean = {f_star_s_fl_mean/1e6:.0f} MPa\n\n'
+      f'The max torsion shear stress is:\n'
+      f'f_star_vt = {f_star_vt:.0f} MPa')
+      
 if __name__ == '__main__':
     main()

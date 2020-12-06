@@ -2,6 +2,15 @@
 
 import matplotlib.pyplot as plt
 
+import numpy as np
+
+import streamlit as st
+
+
+#Import unit aware modules
+import forallpeople as u
+u.environment('structural')
+
 def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
     """
     This function allows for generation of a stiffened box section
@@ -96,8 +105,8 @@ def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
     geometry.plot_geometry(ax=ax)  # plot the geometry
 
     # create a mesh - use a mesh size of 12 for the RHS, 6 for stiffeners
-    rhs_mesh=d/15
-    stif_mesh=t_stif/2
+    rhs_mesh=d/6
+    stif_mesh=t_stif
     
     if n_stif == 3:
         mesh = geometry.create_mesh(mesh_sizes=[rhs_mesh,rhs_mesh,rhs_mesh,rhs_mesh,
@@ -113,3 +122,45 @@ def boxgenerator(b,d,t_w,t_f,d_stif,t_stif,n_stif):
     section = CrossSection(geometry, mesh) # create a CrossSection object
     
     return section, fig, ax
+
+
+def in_plane_principle(section,Fy,Mx,My,Mz):
+    """
+    Determine in plane stresses and output peak stresses
+    """
+    stress_post = section.calculate_stress(Vy = Fy,
+                                        Mxx = Mz,
+                                        Myy = My,
+                                        Mzz = Mx)
+    col1, col2 = st.beta_columns(2)
+    stress_post.plot_stress_m_zz(pause=True)
+    col1.pyplot()
+    stress_post.plot_stress_v_zxy()
+    col2.pyplot()
+    stresses = stress_post.get_stress()
+    f_star_s_comp = stresses[0]['sig_zz_m'].max() * u.N/u.m**2
+    f_star_s_tens = stresses[0]['sig_zz_m'].min() * u.N/u.m**2
+    st.text(f'The maximum comp/tension stresses in the section are:\n'
+        f'f_star_s_comp = {f_star_s_comp.to(u.MPa)}\n'
+        f'f_star_s_tens = {f_star_s_tens.to(u.MPa)}')
+    
+    return f_star_s_comp, f_star_s_tens, stresses
+
+# Extract stress from the critical locations at the longitudinal flange stiffener
+# Result type can only be max, min or mean
+def stress_location(x_stif,y_stif,tol_x,tol_y,nodes_xy,stresses,result_type):
+    output = []
+    x = nodes_xy[:,0]
+    y = nodes_xy[:,1]
+    for x,y,stress in zip(x,y,stresses):
+        if (x_stif - tol_x) <= x <= (x_stif + tol_x)  and (y_stif - tol_y) <= y <= (y_stif + tol_y):
+            output.append(stress)
+        else:
+            pass
+    if result_type == "max":
+        return abs(max(output))
+    elif result_type == "min":
+        return abs(min(output))
+    elif result_type == "mean":
+        return abs(np.mean(output))
+

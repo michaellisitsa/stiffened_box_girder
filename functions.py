@@ -15,13 +15,16 @@ import section_funcs
 #Import handcalcs
 from handcalcs import handcalc
 
+#Import unit aware modules
+import forallpeople as u
+u.environment('structural')
+
 @handcalc(override="long")
 def longit_stif_spacing(b, d, n_stif):
     b_flange = b / (n_stif + 1)
     b_web = d / (n_stif + 1)
     return b_flange, b_web
 
-@handcalc(override="long")
 def stress_locations(b,d,t_f,t_w,n_stif: int):
     """
     Calculate the critical locations to be used for determining stresses
@@ -34,7 +37,9 @@ def stress_locations(b,d,t_f,t_w,n_stif: int):
     y_w_stif = d - d/(n_stif+1) #y-coord of above
 
     x_f_mid = b/(n_stif+1)/2 #x-coord of the mid-plane of the critical flange-plate for yield checks only (Cl.7.3.2)
+    y_f_mid = d - t_f/2 #y-coord of the mid-plane of the critical flange plate
 
+    x_w_mid = t_w/2
     y_w_mid = d - d/(n_stif+1)/2 #location of the mid-plane of the critical web-plate for yield checks only (Cl.7.3.2)
     
-    return x_f_stif,y_f_stif,x_w_stif,y_w_stif,x_f_mid,y_w_mid
+    return x_f_stif,y_f_stif,x_w_stif,y_w_stif,x_f_mid,y_f_mid,x_w_mid,y_w_mid
