@@ -149,8 +149,13 @@ def main():
                                      d_stif,
                                      t_stif,
                                      n_stif)
-    section.calculate_geometric_properties(time_info=False)
-    section.calculate_warping_properties(time_info=False)
+    @st.cache
+    def calculate_section(section):
+        section.calculate_geometric_properties(time_info=False)
+        section.calculate_warping_properties(time_info=False)
+        return section
+    
+    section = calculate_section(section)
 
     area = section.get_area()
     (cx, cy) = section.get_c()

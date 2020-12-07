@@ -53,24 +53,6 @@ def flange_yield(f_star_vt,f_star_v,f_star_s_fl_mid):
     f_star_comb = (f_star_s_fl_mid**2 + 3 * f_star_vf**2)**0.5
     return f_star_comb
 
-class Interpolate:
-    """Linear interpolation function to get value at a point given a set of x and y points"""
-    def __init__(self, x_list, y_list):
-        if any(y - x <= 0 for x, y in zip(x_list, x_list[1:])):
-            raise ValueError("x_list must be in strictly ascending order!")
-        self.x_list = x_list
-        self.y_list = y_list
-        intervals = zip(x_list, x_list[1:], y_list, y_list[1:])
-        self.slopes = [(y2 - y1) / (x2 - x1) for x1, x2, y1, y2 in intervals]
-
-    def __call__(self, x):
-        if not (self.x_list[0] <= x <= self.x_list[-1]):
-            raise ValueError("x out of bounds!")
-        if x == self.x_list[-1]:
-            return self.y_list[-1]
-        i = bisect_right(self.x_list, x) - 1
-        return self.y_list[i] + self.slopes[i] * (x - self.x_list[i])
-
 def K_buckling(n_stif,a_panel,b_panel,t,f_y):
     '''Function defines a method for calculating the K-value from the curve Fig 7.3.3.2 or Fig 7.4.3.3(A):
     Input params:
@@ -94,12 +76,9 @@ def K_buckling(n_stif,a_panel,b_panel,t,f_y):
     y_k_cv1 = np.array([1,1,1,0.89, 0.68, 0.4, 0.317,0.31, 0.27]) #get several y data points
     y_k_cv2 = np.array([1,1,1,0.86, 0.58, 0.32, 0.257,0.255, 0.242]) #get several y data points
     y_k_cv3 = np.array([1,1,0.54,0.46, 0.17, 0.045, 0.025,0.02, 0.01]) #get several y data points
-    interpcv1 = Interpolate(x_k,y_k_cv1)
-    interpcv2 = Interpolate(x_k,y_k_cv2)
-    interpcv3 = Interpolate(x_k,y_k_cv3)
-    K_cv1 = min(1.0,interpcv1(lamda_k_b))
-    K_cv2 = min(1.0,interpcv2(lamda_k_b))
-    K_cv3 = min(1.0,interpcv3(lamda_k_a))
+    K_cv1 = min(1.0,np.interp(lamda_k_b,x_k,y_k_cv1))
+    K_cv2 = min(1.0,np.interp(lamda_k_b,x_k,y_k_cv2))
+    K_cv3 = min(1.0,np.interp(lamda_k_a,x_k,y_k_cv3))
     
     fig, ax = plt.subplots()
     ax.plot(x_k,y_k_cv1,label="Curve 1")
